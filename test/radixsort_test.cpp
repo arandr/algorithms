@@ -1,14 +1,16 @@
 #include "gtest/gtest.h"
 
 extern "C"{
-	void sort_radix(int sorted_array[], int to_sort_array[]);
+#include "radixsort.h"
 }
 
 TEST(RadixSortTest, SortsPositiveIntegers)
 {
 	int positiveValuedArray[3] = { 2, 4, 3 };
+	array_type positive = { positiveValuedArray, 3 };
 	int resultArray[3] = { 0, 0, 0 };
-	sort_radix(resultArray, positiveValuedArray);
+	array_type result = { resultArray, 3 };
+	sort_radix(&result, &positive);
 	EXPECT_EQ(resultArray[0], 2);
 	EXPECT_EQ(resultArray[1], 3);
 	EXPECT_EQ(resultArray[2], 4);
@@ -21,7 +23,9 @@ TEST(RadixSortTest, SortsNegativeIntegers)
 {
 	int negativeValuedArray[4] = { -50, -10, -20, -100 };
 	int resultArray[4] = { 0, 0, 0, 0 };
-	sort_radix(resultArray, negativeValuedArray);
+	array_type negative = { negativeValuedArray, 4 };
+	array_type result = { resultArray, 4 };
+	sort_radix(&result, &negative);
 	EXPECT_EQ(resultArray[0], -100);
 	EXPECT_EQ(resultArray[1], -50);
 	EXPECT_EQ(resultArray[2], -20);
@@ -36,7 +40,9 @@ TEST(RadixSortTest, SortsMixedValues)
 {
 	int mixedValuedArray[3] = { 2, -5, 13 };
 	int resultArray[3] = { 0, 0, 0 };
-	sort_radix(resultArray, mixedValuedArray);
+	array_type mixed = { mixedValuedArray, 3 };
+	array_type result = { resultArray, 3 };
+	sort_radix(&result, &mixed);
 	EXPECT_EQ(resultArray[0], -5);
 	EXPECT_EQ(resultArray[1], 2);
 	EXPECT_EQ(resultArray[2], 13);
@@ -49,7 +55,9 @@ TEST(RadixSortTest, SortsDuplicates)
 {
 	int duplicateValuedArray[4] = { 10, -10, -10, 40 };
 	int resultArray[4] = { 0, 0, 0, 0 };
-	sort_radix(resultArray, duplicateValuedArray);
+	array_type duplicate = { duplicateValuedArray, 4 };
+	array_type result = { resultArray, 4 };
+	sort_radix(&result, &duplicate);
 	EXPECT_EQ(resultArray[0], -10);
 	EXPECT_EQ(resultArray[1], -10);
 	EXPECT_EQ(resultArray[2], 10);
