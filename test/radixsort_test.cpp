@@ -67,3 +67,18 @@ TEST(RadixSortTest, SortsDuplicates)
 	EXPECT_EQ(duplicateValuedArray[2], -10);
 	EXPECT_EQ(duplicateValuedArray[3], 40);
 }
+
+TEST(RadixSortTest, SortsLargeArray)
+{
+	int* largeArray = new int[1000000];
+	int* resultArray = new int[1000000];
+	for (size_t i = 0; i < 1000000; i++){
+		largeArray[i] = rand();
+	}
+	array_type large = { largeArray, 1000000 };
+	array_type result = { resultArray, 1000000 };
+	sort_radix(&result, &large);
+	for (size_t i = 0; i < 1000000-1; i++){
+		EXPECT_LE(resultArray[i], resultArray[i + 1]);
+	}
+}
