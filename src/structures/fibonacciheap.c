@@ -136,11 +136,6 @@ void fibonacci_heap_insert_node(fibonacci_heap* object, fibonacci_heap_tree_node
 	++object->n_roots;
 }
 
-/* This is provided as a convenience, but is slower than delete_node since the item needs to be found */
-void fibonacci_heap_delete(fibonacci_heap* object, void* item)
-{
-
-}
 
 void fibonacci_heap_delete_node(fibonacci_heap* object, fibonacci_heap_tree_node* node)
 {
@@ -148,11 +143,6 @@ void fibonacci_heap_delete_node(fibonacci_heap* object, fibonacci_heap_tree_node
 	fibonacci_heap_delete_min(object);
 }
 
-/* This is provided as a convenience, but is slower than decrease_key_node since the item needs to be found */
-void fibonacci_heap_decrease_key(fibonacci_heap* object, void* item, int new_key)
-{
-
-}
 
 void fibonacci_heap_decrease_key_node(fibonacci_heap* object, fibonacci_heap_tree_node* node, int new_key)
 {
