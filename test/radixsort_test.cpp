@@ -11,12 +11,12 @@ TEST(RadixSortTest, SortsPositiveIntegers)
 	int resultArray[3] = { 0, 0, 0 };
 	array_type result = { resultArray, 3 };
 	sort_radix(&result, &positive);
-	EXPECT_EQ(resultArray[0], 2);
-	EXPECT_EQ(resultArray[1], 3);
-	EXPECT_EQ(resultArray[2], 4);
-	EXPECT_EQ(positiveValuedArray[0], 2);
-	EXPECT_EQ(positiveValuedArray[1], 4);
-	EXPECT_EQ(positiveValuedArray[2], 3);
+	EXPECT_EQ(2, resultArray[0]);
+	EXPECT_EQ(3, resultArray[1]);
+	EXPECT_EQ(4, resultArray[2]);
+	EXPECT_EQ(2, positiveValuedArray[0]);
+	EXPECT_EQ(4, positiveValuedArray[1]);
+	EXPECT_EQ(3, positiveValuedArray[2]);
 }
 
 TEST(RadixSortTest, SortsNegativeIntegers)
@@ -26,14 +26,14 @@ TEST(RadixSortTest, SortsNegativeIntegers)
 	array_type negative = { negativeValuedArray, 4 };
 	array_type result = { resultArray, 4 };
 	sort_radix(&result, &negative);
-	EXPECT_EQ(resultArray[0], -100);
-	EXPECT_EQ(resultArray[1], -50);
-	EXPECT_EQ(resultArray[2], -20);
-	EXPECT_EQ(resultArray[3], -10);
-	EXPECT_EQ(negativeValuedArray[0], -50);
-	EXPECT_EQ(negativeValuedArray[1], -10);
-	EXPECT_EQ(negativeValuedArray[2], -20);
-	EXPECT_EQ(negativeValuedArray[3], -100);
+	EXPECT_EQ(-100, resultArray[0]);
+	EXPECT_EQ(-50, resultArray[1]);
+	EXPECT_EQ(-20, resultArray[2]);
+	EXPECT_EQ(-10, resultArray[3]);
+	EXPECT_EQ(-50, negativeValuedArray[0]);
+	EXPECT_EQ(-10, negativeValuedArray[1]);
+	EXPECT_EQ(-20, negativeValuedArray[2]);
+	EXPECT_EQ(-100, negativeValuedArray[3]);
 }
 
 TEST(RadixSortTest, SortsMixedValues)
@@ -43,12 +43,12 @@ TEST(RadixSortTest, SortsMixedValues)
 	array_type mixed = { mixedValuedArray, 3 };
 	array_type result = { resultArray, 3 };
 	sort_radix(&result, &mixed);
-	EXPECT_EQ(resultArray[0], -5);
-	EXPECT_EQ(resultArray[1], 2);
-	EXPECT_EQ(resultArray[2], 13);
-	EXPECT_EQ(mixedValuedArray[0], 2);
-	EXPECT_EQ(mixedValuedArray[1], -5);
-	EXPECT_EQ(mixedValuedArray[2], 13);
+	EXPECT_EQ(-5, resultArray[0]);
+	EXPECT_EQ(2, resultArray[1]);
+	EXPECT_EQ(13, resultArray[2]);
+	EXPECT_EQ(2, mixedValuedArray[0]);
+	EXPECT_EQ(-5, mixedValuedArray[1]);
+	EXPECT_EQ(13, mixedValuedArray[2]);
 }
 
 TEST(RadixSortTest, SortsDuplicates)
@@ -58,14 +58,14 @@ TEST(RadixSortTest, SortsDuplicates)
 	array_type duplicate = { duplicateValuedArray, 4 };
 	array_type result = { resultArray, 4 };
 	sort_radix(&result, &duplicate);
-	EXPECT_EQ(resultArray[0], -10);
-	EXPECT_EQ(resultArray[1], -10);
-	EXPECT_EQ(resultArray[2], 10);
-	EXPECT_EQ(resultArray[3], 40);
-	EXPECT_EQ(duplicateValuedArray[0], 10);
-	EXPECT_EQ(duplicateValuedArray[1], -10);
-	EXPECT_EQ(duplicateValuedArray[2], -10);
-	EXPECT_EQ(duplicateValuedArray[3], 40);
+	EXPECT_EQ(-10, resultArray[0]);
+	EXPECT_EQ(-10, resultArray[1]);
+	EXPECT_EQ(10, resultArray[2]);
+	EXPECT_EQ(40, resultArray[3]);
+	EXPECT_EQ(10, duplicateValuedArray[0]);
+	EXPECT_EQ(-10, duplicateValuedArray[1]);
+	EXPECT_EQ(-10, duplicateValuedArray[2]);
+	EXPECT_EQ(40, duplicateValuedArray[3]);
 }
 
 TEST(RadixSortTest, SortsLargeArray)

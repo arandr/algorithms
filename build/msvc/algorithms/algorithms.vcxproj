@@ -76,10 +76,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\sort\radixsort.c" />
+    <ClCompile Include="..\..\..\src\structures\fibonacciheap.c" />
+    <ClCompile Include="..\..\..\src\structures\linkedlist.c" />
+    <ClCompile Include="..\..\..\test\fibonacciheap_test.cpp" />
     <ClCompile Include="..\..\..\test\radixsort_test.cpp" />
     <ClCompile Include="..\..\..\test\run_all_tests.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\include\fibonacciheap.h" />
+    <ClInclude Include="..\..\..\src\include\linkedlist.h" />
     <ClInclude Include="..\..\..\src\include\radixsort.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

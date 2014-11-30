@@ -1,59 +1,5 @@
 #include "fibonacciheap.h"
 
-linkedlist* linkedlist_create(void)
-{
-	linkedlist* list = (linkedlist*)malloc(sizeof(linkedlist));
-	list->next = list;
-	list->prev = list;
-	list->obj = NULL;
-	return list;
-}
-
-void linkedlist_foreach(linkedlist* object, list_iterator_func function)
-{
-	linkedlist* current = object;
-	if (current == NULL) return;
-	do{
-		function(current->obj);
-		current = current->next;
-	} while (current != object);
-}
-
-void linkedlist_collect(linkedlist* object, void** objs)
-{
-	linkedlist* current = object;
-	if (current == NULL) return;
-	size_t n = 0;
-	do{
-		objs[n++] = current->obj;
-	} while (current != object);
-}
-
-linkedlist* linkedlist_append(linkedlist* object, void* obj)
-{
-	linkedlist* last = object->prev;
-	last->next = linkedlist_create();
-	last->next->obj = obj;
-	last->next->prev = last;
-	last->next->next = object;
-	object->prev = last->next;
-	return object->prev;
-}
-
-void linkedlist_destroy(linkedlist* object)
-{
-	linkedlist* current = object;
-	if (current == NULL) return;
-	if (current->next == object){
-		free(object);
-		return;
-	}
-	do{
-		current = current->next;
-		free(current->prev);
-	} while (current->next != object);
-}
-
 /* private functions */
 static fibonacci_heap_tree_node* fibonacci_heap_tree_node_create(void)
 {
@@ -63,7 +9,22 @@ static fibonacci_heap_tree_node* fibonacci_heap_tree_node_create(void)
 	node->key = 0;
 	node->n_children = 0;
 	node->marked = BOOL_FALSE;
+	node->parent = NULL;
 	return node;
+}
+
+static void fibonacci_heap_tree_node_remove_child(fibonacci_heap_tree_node* object, fibonacci_heap_tree_node* child)
+{
+	linkedlist* current = object->children;
+	for (linkedlist* current = object->children; current != object->children; current = current->next){
+		if (current->obj == child) break;
+	}
+	if (current->obj != child) return; //not found
+	current->prev->next = current->next;
+	current->next->prev = current->prev;
+	current->prev = current->next = current;
+	linkedlist_destroy(current);
+	--object->n_children;
 }
 
 static void fibonacci_heap_tree_node_destroy(fibonacci_heap_tree_node* object)
@@ -71,6 +32,59 @@ static void fibonacci_heap_tree_node_destroy(fibonacci_heap_tree_node* object)
 	linkedlist_foreach(object->children, &fibonacci_heap_tree_node_destroy);
 	linkedlist_destroy(object->children);
 	free(object);
+}
+
+static void fibonacci_heap_update_minimum(fibonacci_heap* object)
+{
+	linkedlist* current = object->min_root;
+	linkedlist* first = object->min_root;
+	while (current->next != first){
+		if (((fibonacci_heap_tree_node*)(current->obj))->key < ((fibonacci_heap_tree_node*)(object->min_root->obj))->key) object->min_root = current;
+		current = current->next;
+	}
+}
+
+/* Reduces the number of tree roots in the heap by enforcing that there be at most one root of a given degree (number of children).
+This is only done when deleting the minimum element, *not* at insert time. */
+static void fibonacci_heap_consolidate(fibonacci_heap* object)
+{
+	linkedlist* current = object->min_root;
+	linkedlist** degree_roots_map = (linkedlist**)calloc(object->n_roots, sizeof(linkedlist*)); //technically can be bound to log (n of elements), but we don't keep the total count of elements handy.
+	linkedlist* to_destroy_list_node = NULL;
+	while (current->next != object->min_root){
+		size_t degree = ((fibonacci_heap_tree_node*)(current->obj))->n_children;
+		if (degree_roots_map[degree] == NULL){
+			degree_roots_map[degree] = current;
+			current = current->next;
+		}
+		else { //found two trees where the roots have the same degree, must merge them
+			if (((fibonacci_heap_tree_node*)(degree_roots_map[degree]->obj))->key < ((fibonacci_heap_tree_node*)(current->obj))->key){
+				to_destroy_list_node = current;
+				if (((fibonacci_heap_tree_node*)(degree_roots_map[degree]->obj))->children == NULL)
+					((fibonacci_heap_tree_node*)(degree_roots_map[degree]->obj))->children = linkedlist_append(((fibonacci_heap_tree_node*)(degree_roots_map[degree]->obj))->children, current->obj);
+				else linkedlist_append(((fibonacci_heap_tree_node*)(degree_roots_map[degree]->obj))->children, current->obj);
+				((fibonacci_heap_tree_node*)(degree_roots_map[degree]->obj))->n_children++;
+				((fibonacci_heap_tree_node*)(current->obj))->parent = degree_roots_map[degree]->obj;
+				current = degree_roots_map[degree];
+				degree_roots_map[degree] = NULL;
+			}
+			else {
+				to_destroy_list_node = degree_roots_map[degree];
+				if (((fibonacci_heap_tree_node*)(current->obj))->children == NULL)
+					((fibonacci_heap_tree_node*)(current->obj))->children = linkedlist_append(((fibonacci_heap_tree_node*)(current->obj))->children, degree_roots_map[degree]->obj);
+				else linkedlist_append(((fibonacci_heap_tree_node*)(current->obj))->children, degree_roots_map[degree]->obj);
+				((fibonacci_heap_tree_node*)(current->obj))->n_children++;
+				((fibonacci_heap_tree_node*)(degree_roots_map[degree]->obj))->parent = current->obj;
+				degree_roots_map[degree] = NULL;
+			}
+			to_destroy_list_node->prev->next = to_destroy_list_node->next;
+			to_destroy_list_node->next->prev = to_destroy_list_node->prev;
+			to_destroy_list_node->prev = to_destroy_list_node->next = to_destroy_list_node;
+			linkedlist_destroy(to_destroy_list_node);
+			--object->n_roots;
+		}
+	}
+	fibonacci_heap_update_minimum(object);
 }
 
 /* API functions */
@@ -122,6 +136,7 @@ void fibonacci_heap_insert_node(fibonacci_heap* object, fibonacci_heap_tree_node
 	++object->n_roots;
 }
 
+/* This is provided as a convenience, but is slower than delete_node since the item needs to be found */
 void fibonacci_heap_delete(fibonacci_heap* object, void* item)
 {
 
@@ -129,9 +144,11 @@ void fibonacci_heap_delete(fibonacci_heap* object, void* item)
 
 void fibonacci_heap_delete_node(fibonacci_heap* object, fibonacci_heap_tree_node* node)
 {
-
+	fibonacci_heap_decrease_key_node(object, node, INT_MIN);
+	fibonacci_heap_delete_min(object);
 }
 
+/* This is provided as a convenience, but is slower than decrease_key_node since the item needs to be found */
 void fibonacci_heap_decrease_key(fibonacci_heap* object, void* item, int new_key)
 {
 
@@ -139,42 +156,31 @@ void fibonacci_heap_decrease_key(fibonacci_heap* object, void* item, int new_key
 
 void fibonacci_heap_decrease_key_node(fibonacci_heap* object, fibonacci_heap_tree_node* node, int new_key)
 {
-
-}
-
-/* Reduces the number of tree roots in the heap by enforcing that there be at most one root of a given degree (number of children). 
-   This is only done when deleting the minimum element, *not* at insert time. */
-static void fibonacci_heap_consolidate(fibonacci_heap* object)
-{
-	linkedlist* current = object->min_root;
-	linkedlist** degree_roots_map = (linkedlist**)calloc(object->n_roots,sizeof(linkedlist*)); //technically can be bound to log (n of elements), but we don't keep the total count of elements handy.
-	linkedlist* to_destroy_list_node = NULL;
-	while (current->next != object->min_root){
-		size_t degree = ((fibonacci_heap_tree_node*)(current->obj))->n_children;
-		if (degree_roots_map[degree] == NULL){
-			degree_roots_map[degree] = current;
-			current = current->next;
-		} else { //found two trees where the roots have the same degree, must merge them
-			if (((fibonacci_heap_tree_node*)(degree_roots_map[degree]->obj))->key < ((fibonacci_heap_tree_node*)(current->obj))->key){
-				to_destroy_list_node = current;
-				linkedlist_append(((fibonacci_heap_tree_node*)(degree_roots_map[degree]->obj))->children, current->obj);
-				((fibonacci_heap_tree_node*)(degree_roots_map[degree]->obj))->n_children++;
-				current = degree_roots_map[degree];
-				degree_roots_map[degree] = NULL;
-			} else {
-				to_destroy_list_node = degree_roots_map[degree];
-				linkedlist_append(((fibonacci_heap_tree_node*)(current->obj))->children, degree_roots_map[degree]->obj);
-				((fibonacci_heap_tree_node*)(current->obj))->n_children++;
-				degree_roots_map[degree] = NULL;
-			}
-			to_destroy_list_node->prev->next = to_destroy_list_node->next;
-			to_destroy_list_node->next->prev = to_destroy_list_node->prev;
-			to_destroy_list_node->prev = to_destroy_list_node->next = NULL;
-			linkedlist_destroy(to_destroy_list_node);
-			--object->n_roots;
+	node->key = new_key;
+	if (node->parent == NULL || node->parent->key < new_key){
+		if (node->key < ((fibonacci_heap_tree_node*)(object->min_root->obj))->key){
+			linkedlist* current = object->min_root;
+			for (; current->next != object->min_root; current = current->next) if (current->obj == node) break;
+			object->min_root = current;
 		}
+		return;
+	}
+	fibonacci_heap_tree_node* parent = node->parent;
+	fibonacci_heap_tree_node_remove_child(parent, node);
+	fibonacci_heap_insert_node(object, node);
+	while (parent != NULL){
+		if (parent->parent != NULL && parent->marked != BOOL_TRUE){
+			parent->marked = BOOL_TRUE;
+			break;
+		} else if (parent->parent != NULL){
+			parent->marked = BOOL_FALSE;
+			fibonacci_heap_tree_node_remove_child(parent->parent, parent);
+			fibonacci_heap_insert_node(object, parent);
+		}
+		parent = parent->parent;
 	}
 }
+
 
 void fibonacci_heap_delete_min(fibonacci_heap* object)
 {
@@ -183,18 +189,16 @@ void fibonacci_heap_delete_min(fibonacci_heap* object)
 	fibonacci_heap_tree_node* deleted_node = object->min_root->obj;
 	object->min_root->next->prev = object->min_root->prev;
 	object->min_root->prev->next = object->min_root->next;
-	object->min_root->prev = object->min_root->next = NULL;
+	object->min_root->prev = object->min_root->next = object->min_root;
 	linkedlist_destroy(object->min_root);
 	--object->n_roots;
 	object->min_root = next_min_root;
-	/*while (current->next != next_min_root){
-		if (((fibonacci_heap_tree_node*)(current->obj))->key < ((fibonacci_heap_tree_node*)(object->min_root->obj))->key) object->min_root = current;
-		current = current->next;
-	}*/
-	fibonacci_heap_tree_node** new_roots = (fibonacci_heap_tree_node**)malloc(deleted_node->n_children * sizeof(fibonacci_heap_tree_node*));
-	linkedlist_collect(deleted_node->children, new_roots);
-	for (size_t i = 0; i < deleted_node->n_children; i++) fibonacci_heap_insert_node(object, new_roots[i]);
-	linkedlist_destroy(deleted_node->children);
+	if (deleted_node->n_children > 0){
+		fibonacci_heap_tree_node** new_roots = (fibonacci_heap_tree_node**)malloc(deleted_node->n_children * sizeof(fibonacci_heap_tree_node*));
+		linkedlist_collect(deleted_node->children, new_roots);
+		for (size_t i = 0; i < deleted_node->n_children; i++) fibonacci_heap_insert_node(object, new_roots[i]);
+		linkedlist_destroy(deleted_node->children);
+	}
 	deleted_node->children = NULL;
 	fibonacci_heap_tree_node_destroy(deleted_node);
 	fibonacci_heap_consolidate(object);

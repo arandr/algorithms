@@ -1,18 +1,6 @@
 #include <stdlib.h>
 
-typedef struct linkedlist{
-	struct linkedlist* prev;
-	struct linkedlist* next;
-	void* obj;
-} linkedlist;
-
-typedef void(*list_iterator_func)(void* obj);
-
-linkedlist* linkedlist_create(void);
-
-void linkedlist_foreach(linkedlist* object, list_iterator_func function);
-
-void linkedlist_destroy(linkedlist* object);
+#include "linkedlist.h"
 
 typedef enum{
 	BOOL_FALSE = 0,
@@ -21,10 +9,11 @@ typedef enum{
 
 typedef struct fibonacci_heap_tree_node{
 	linkedlist* children;
-	short n_children; //degree of heap nodes is supposed to be low, we can save space here
+	unsigned short n_children; //degree of heap nodes is supposed to be low, we can save space here
 	boolean_t marked;
 	int key;
 	void* item;
+	struct fibonacci_heap_tree_node* parent;
 } fibonacci_heap_tree_node;
 
 typedef struct fibonacci_heap{
